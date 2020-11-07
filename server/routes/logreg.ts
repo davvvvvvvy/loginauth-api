@@ -21,24 +21,26 @@ router.get('/user', (req, res) => {
     if (req.session.loggedIn == true) {
         let id = req.query.id
 
-        con.query(`SELECT * FROM users_data WHERE id="${id}";`, (err, respond) => {
-            if (err) console.log(err)
-            if (respond.length <= 0) {
-                console.log('empty')
-                res.json({message: 'Empty database.'})
-            } else {
-                res.json({message: '/user', email: respond[0].email, password: respond[0].pass})
-            }
-        })
+        try {
+            con.query(`SELECT * FROM users_data WHERE id="${id}";`, (err, respond) => {
+                if (err) console.log(err)
+                if (respond.length <= 0) {
+                    console.log('empty')
+                    res.json({message: 'Empty database.'})
+                } else {
+                    res.json({message: '/user', email: respond[0].email, password: respond[0].pass})
+                }
+            })
+        } catch(e) { console.log(e) }
+
     }
-    res.json({message: 'Loggin first.'})
 })
 
 router.get('/login', (req, res) => {
     if (req.session.loggedIn == true) {
         res.redirect(`/user?id=${req.session.name}`)
     }
-    res.json({message: 'You need to login first.'})
+    res.json({message: 'You need to login first, use /auth-login.'})
 })
 
 router.get('/auth-login', (req, res) => {
@@ -47,17 +49,20 @@ router.get('/auth-login', (req, res) => {
     } else {
         let token = req.query.token
 
-        con.query(`SELECT * FROM users_data WHERE token="${token}";`, (err, respond) => {
-            if (err) console.log(err)
-            if (respond.length <= 0) {
-                console.log('empty')
-                res.json({message: 'Empty database.'})
-            } else {
-                req.session.loggedIn = true
-                req.session.name = respond[0].id
-                res.redirect(`/user?id=${req.session.name}`)
-            }
-        })
+        try {
+            con.query(`SELECT * FROM users_data WHERE token="${token}";`, (err, respond) => {
+                if (err) console.log(err)
+                if (respond.length <= 0) {
+                    console.log('empty')
+                    res.json({message: 'Empty database.'})
+                } else {
+                    req.session.loggedIn = true
+                    req.session.name = respond[0].id
+                    res.redirect(`/user?id=${req.session.name}`)
+                }
+            })
+        } catch(e) { console.log(e) }
+
     }
 })
 
@@ -65,7 +70,7 @@ router.get('/register', (req, res) => {
     if (req.session.loggedIn == true) {
         res.redirect(`/user?id=${req.session.name}`)
     }
-    res.json({message: 'You need to register.'})
+    res.json({message: 'You need to register, use /auth-register.'})
 })
 
 router.get('/auth-register', (req, res) => {
@@ -75,13 +80,18 @@ router.get('/auth-register', (req, res) => {
         let email = req.headers.email
         let pass = req.headers.password
 
+        //console.log(email)
+        //console.log(pass)
+
         let id = makeId()
         let token = Buffer.from(email+'.'+id+pass).toString('base64')
 
-        con.query(`INSERT INTO users_data VALUES ("${id}", "${email}", "${pass}", "${token}");`, (err, respond) => {
-            if (err) console.log(err)
-            res.redirect(`/user?id=${req.session.name}`)
-        })
+        try {
+            con.query(`INSERT INTO users_data VALUES ("${id}", "${email}", "${pass}", "${token}");`, (err, respond) => {
+                if (err) console.log(err)
+                res.redirect(`/login`)
+            })
+        } catch(e) { console.log(e) }
     }
 })
 
